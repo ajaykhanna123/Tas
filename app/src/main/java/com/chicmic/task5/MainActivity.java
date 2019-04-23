@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
             contactList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    String filename = ((Contact)contactList.getItemAtPosition(i)).getName()
+                    String filename = ((Contact)contactList.getItemAtPosition(i)).getTime()
                             + Utilities.FILE_EXTENSION;
                     Toast.makeText(MainActivity.this,filename,Toast.LENGTH_SHORT).show();
                     Intent viewNoteIntent = new Intent(getApplicationContext(), AddContactActivity.class);
