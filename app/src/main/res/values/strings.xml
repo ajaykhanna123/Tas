@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">MyContact</string>
+    <string name="menu_item_exit">Exit</string>
+    <string name="menu_item_delete">Delete</string>
 </resources>

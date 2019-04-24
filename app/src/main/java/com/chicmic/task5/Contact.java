@@ -1,7 +1,6 @@
 package com.chicmic.task5;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 public class Contact implements Serializable {
     private String name;
@@ -11,8 +10,11 @@ public class Contact implements Serializable {
     private String email;
     private String faxNo;
     private long time;
+    private String imageId;
 
-    public Contact(long time,String name, String phnNo, String address, String gender, String email, String faxNo ) {
+
+    public Contact(long time, String name, String phnNo, String address, String gender, String email,
+                   String faxNo, String imageId) {
         this.name = name;
         this.phnNo = phnNo;
         this.address = address;
@@ -20,6 +22,7 @@ public class Contact implements Serializable {
         this.email = email;
         this.faxNo = faxNo;
         this.time = time;
+        this.imageId = imageId;
     }
 
     public String getName() {
@@ -76,5 +79,13 @@ public class Contact implements Serializable {
 
     public void setTime(long uniqueId) {
         this.time = uniqueId;
+    }
+
+    public String getImageId() {
+        return imageId;
+    }
+
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
     }
 }

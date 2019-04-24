@@ -20,7 +20,7 @@ public class Utilities {
     public static final String FILE_EXTENSION = ".bin";
 
     public static boolean saveContact(Context context, Contact note) {
-        String filename = String.valueOf(note.getName()) + FILE_EXTENSION;
+        String filename = String.valueOf(note.getTime()) + FILE_EXTENSION;
 
 
         FileOutputStream fos;

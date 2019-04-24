@@ -11,16 +11,42 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 
 public class ContactsAdapter extends ArrayAdapter<Contact> {
+    private Context context;
+    private ArrayList<Contact> contacts;
 
 
-    public ContactsAdapter(@NonNull Context context, int resource, @NonNull ArrayList<Contact> notes) {
-        super(context, resource, notes);
+    public ContactsAdapter(@NonNull Context context, int resource, @NonNull ArrayList<Contact> contacts) {
+        super(context, resource, contacts);
+        this.contacts = contacts;
+        this.context = context;
+
     }
+
+    public void remove(int position) {
+        contacts.remove(position);
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getViewTypeCount() {
+        return getCount();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+
+        return position;
+    }
+
+    @Override
+    public int getCount() {
+        return contacts.size();
+    }
+
 
     @NonNull
     @Override
@@ -43,6 +69,10 @@ public class ContactsAdapter extends ArrayAdapter<Contact> {
 
             userName.setText(note.getName());
             userPhone.setText(note.getPhnNo());
+            if (note.getImageId() != null) {
+                BitmapToString.convertStringToBitmap(note.getImageId(), userImage);
+            }
+
 
         }
         return convertView;

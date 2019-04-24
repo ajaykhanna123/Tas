@@ -1,6 +1,6 @@
 package com.chicmic.task5;
 
-import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -8,14 +8,12 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.provider.ContactsContract;
-import android.provider.MediaStore;
-import android.support.v4.graphics.BitmapCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,9 +27,9 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.UUID;
+
+//import com.baoyz.swipemenulistview.SwipeMenuListView;
 
 public class AddContactActivity extends AppCompatActivity implements View.OnClickListener {
     private ImageView imageUserProfile;
@@ -51,6 +49,45 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
     private String lastImgAccessed;
 
+
+    //private SwipeMenuListView swipeMenuListView;
+
+
+    Target imgTarget = new Target() {
+        @Override
+        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+
+//
+
+
+            imageUserProfile.setImageBitmap(bitmap);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream);
+
+            byte[] imageAsByte = byteArrayOutputStream.toByteArray();
+            String rawString = Base64.encodeToString(imageAsByte, Base64.DEFAULT);
+            byte[] imgBytes = Base64.decode(rawString, Base64.DEFAULT);
+            Bitmap bitmap1 = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+            imageUserProfile.setImageBitmap(bitmap1);
+        }
+
+        @Override
+        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+        }
+
+        @Override
+        public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+        }
+    };
+
+    public boolean isRadioGroupChecked() {
+        if (radioGender.getCheckedRadioButtonId() == -1) {
+            return false;
+        }
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +110,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         addImage.setOnClickListener(this);
 
         mFileName = getIntent().getStringExtra(Utilities.EXTRAS_NOTE_FILENAME);
-        Toast.makeText(this,mFileName+"",Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this,mFileName+"",Toast.LENGTH_SHORT).show();
         if(mFileName != null && !mFileName.isEmpty() && mFileName.endsWith(Utilities.FILE_EXTENSION)) {
             mLoadedNote = Utilities.getContactByFileName(getApplicationContext(), mFileName);
             if (mLoadedNote != null) {
@@ -83,6 +120,11 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                 edtPhnNo.setText(mLoadedNote.getPhnNo());
                 edtFax.setText(mLoadedNote.getFaxNo());
                 edtEmail.setText(mLoadedNote.getEmail());
+                if (mLoadedNote.getImageId() != null) {
+                    BitmapToString.convertStringToBitmap(mLoadedNote.getImageId(), imageUserProfile);
+                }
+
+
 
                 if(mLoadedNote.getGender().matches("Male"))
                 {
@@ -95,14 +137,33 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             }
         }
     }
-    public boolean isRadioGroupChecked()
-    {
-        if(radioGender.getCheckedRadioButtonId()==-1)
-        {
-            return false;
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_add_contact, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.addContactMenu) {
+            saveContact();
+            return true;
         }
         return true;
     }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.addImageButton) {
+            Intent i = new Intent(
+                    Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+            startActivityForResult(i, RESULT_LOAD_IMAGE);
+        }
+    }
+
     public void saveContact()
     {
         Contact contact;
@@ -112,17 +173,31 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         String userPhnNo=edtPhnNo.getText().toString().trim();
         String userfax=edtFax.getText().toString().trim();
         String userGender="";
+        String userImageId = "";
+//        String userImageId=PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+//                .getString("image", "");
+
+
+        if (imageUserProfile.getDrawable() != null) {
+            Bitmap bitmap = ((BitmapDrawable) imageUserProfile.getDrawable()).getBitmap();
+            userImageId = StringToBitmap.convertStringToBitmap(bitmap, imageUserProfile);
+        }
+
+
+
+
+
         if(isRadioGroupChecked())
         {
             if(radioMale.isChecked())
             {
                 userGender=radioMale.getText().toString().trim();
-                Toast.makeText(this,userGender,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this,userGender,Toast.LENGTH_SHORT).show();
             }
             if(radioFemale.isChecked())
             {
                 userGender=radioFemale.getText().toString().trim();
-                Toast.makeText(this,userGender,Toast.LENGTH_SHORT).show();
+                // Toast.makeText(this,userGender,Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -137,16 +212,18 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             Toast.makeText(AddContactActivity.this,"Email is invalid",Toast.LENGTH_SHORT).show();
             return;
         }
-        String contactUniqueId= UUID.randomUUID().toString();
+
 
         if (mLoadedNote == null){
-            contact=new Contact(System.currentTimeMillis(),userName,userPhnNo,userAddress,userGender,userEmailAddress,userfax);
+            contact = new Contact(System.currentTimeMillis(), userName, userPhnNo,
+                    userAddress, userGender, userEmailAddress, userfax, userImageId);
 
         }
         else
         {
-            contact=new Contact(mLoadedNote.getTime(),mLoadedNote.getName(),userPhnNo,userAddress,userGender,userEmailAddress,userfax);
-            Toast.makeText(this, System.currentTimeMillis()+"", Toast.LENGTH_SHORT).show();
+            contact = new Contact(mLoadedNote.getTime(), userName, userPhnNo,
+                    userAddress, userGender, userEmailAddress, userfax, userImageId);
+            //Toast.makeText(this, System.currentTimeMillis()+"", Toast.LENGTH_SHORT).show();
         }
 
         if(Utilities.saveContact(this,contact))
@@ -163,30 +240,30 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         finish();
     }
 
+    public void deleteNote() {
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_add_contact, menu);
-        return true;
-    }
+        if (mLoadedNote == null) {
+            finish();
+        } else {
+            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+            alert.setTitle("Delete Note")
+                    .setMessage("Are you sure you want to delete ")
+                    .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Utilities.deleteContact(getApplicationContext(),
+                                    mLoadedNote.getTime() + Utilities.FILE_EXTENSION);
+                            Toast.makeText(getApplicationContext(),
+                                    " contact has been deleted", Toast.LENGTH_SHORT).show();
+                            finish();
+                        }
+                    })
+                    .setNegativeButton("NO", null)
+                    .setCancelable(false);
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId()==R.id.addContactMenu)
-        {
-            saveContact();
-            return true;
-        }
-        return true;
-    }
+            alert.show();
 
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.addImageButton) {
-            Intent i = new Intent(
-                    Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
-            startActivityForResult(i, RESULT_LOAD_IMAGE);
         }
     }
 
@@ -215,8 +292,6 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
             lastImgAccessed = data.getData().toString();
 
 
-
-
             Toast.makeText(this,picturePath,Toast.LENGTH_SHORT).show();
 
             //imageUserProfile.setImageBitmap(selectedImageBitmap);
@@ -226,30 +301,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
     }
 
-    Target imgTarget = new Target() {
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
 
-            imageUserProfile.setImageBitmap(bitmap);
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG,70,byteArrayOutputStream);
-            byte[] imageAsByte = byteArrayOutputStream.toByteArray();
-            String rawString = Base64.encodeToString(imageAsByte,Base64.DEFAULT);
-            byte[] imgBytes = Base64.decode(rawString,Base64.DEFAULT);
-            Bitmap bitmap1 = BitmapFactory.decodeByteArray(imgBytes,0,imgBytes.length);
-           imageUserProfile.setImageBitmap(bitmap1);
-        }
-
-        @Override
-        public void onBitmapFailed(Exception e, Drawable errorDrawable) {
-
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable placeHolderDrawable) {
-
-        }
-    };
 
 
 }
