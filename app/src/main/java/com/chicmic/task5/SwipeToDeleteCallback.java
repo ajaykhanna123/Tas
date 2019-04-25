@@ -25,17 +25,31 @@ abstract public class SwipeToDeleteCallback extends ItemTouchHelper.Callback {
     private int intrinsicHeight;
 
 
+    private boolean shouldMove;
+
     SwipeToDeleteCallback(Context context) {
         mContext = context;
         mBackground = new ColorDrawable();
         backgroundColor = Color.parseColor("#b80f0a");
         mClearPaint = new Paint();
         mClearPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        deleteDrawable = ContextCompat.getDrawable(mContext, R.drawable.ic_delete_black_24dp);
+        deleteDrawable = ContextCompat.getDrawable(mContext, R.mipmap.baseline_delete_outline_white_48);
         intrinsicWidth = deleteDrawable.getIntrinsicWidth();
         intrinsicHeight = deleteDrawable.getIntrinsicHeight();
 
 
+    }
+
+    public boolean isShouldMove() {
+        return shouldMove;
+    }
+
+    public void enableMovement() {
+        shouldMove = false;
+    }
+
+    public void disableMovement() {
+        shouldMove = true;
     }
 
 
@@ -46,7 +60,7 @@ abstract public class SwipeToDeleteCallback extends ItemTouchHelper.Callback {
 
     @Override
     public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder viewHolder1) {
-        return false;
+        return shouldMove;
     }
 
     @Override

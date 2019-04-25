@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:scrollbars="vertical">
+
+
+        <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".AddContactActivity"
     android:scrollbars="vertical">
+            >
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/user_profile_image"
@@ -53,15 +66,18 @@
     <EditText
         android:id="@+id/edtContactName"
         android:layout_width="0dp"
+        android:inputType="text"
+        android:lines="1"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
+        android:maxLines="1"
+
         android:maxLength="50"
         android:hint="Name"
-
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/imageAccount"
         app:layout_constraintTop_toBottomOf="@+id/user_profile_image" />
@@ -84,6 +100,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
+        android:lines="1"
+        android:maxLines="1"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:hint="Phone "
@@ -113,6 +131,9 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
+        android:inputType="text"
+        android:lines="1"
+        android:maxLines="1"
         android:hint="Address"
         android:maxLength="100"
         app:layout_constraintEnd_toEndOf="parent"
@@ -137,6 +158,8 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
+        android:lines="1"
+        android:maxLines="1"
         android:inputType="textEmailAddress"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
@@ -204,15 +227,16 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
+        android:lines="1"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
+        android:maxLines="1"
         android:hint="Fax"
         android:maxLength="250"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/faxImage"
         app:layout_constraintTop_toBottomOf="@+id/radioGender" />
 
-
-
-
+        </android.support.constraint.ConstraintLayout>
+    </ScrollView>
 </android.support.constraint.ConstraintLayout>

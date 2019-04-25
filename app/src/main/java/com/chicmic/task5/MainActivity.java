@@ -4,115 +4,40 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
-import android.view.ActionMode;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
-//import com.baoyz.swipemenulistview.SwipeMenuListView;
 
-public class MainActivity extends AppCompatActivity implements AlertDialogHelper.AlertDialogListener {
+public class MainActivity extends AppCompatActivity implements View.OnLongClickListener {
     private FloatingActionButton addContact;
-    RecyclerContactsAdapter contactsAdapter;
-    ActionMode mActionMode;
-    Menu context_menu;
-    boolean isMultiSelect = false;
-    ArrayList<Contact> multiselectList = new ArrayList<>();
-    AlertDialogHelper alertDialogHelper;
-    ArrayList<Contact> contacts;
-    AlertDialogHelper.AlertDialogListener alertDialogListener = new AlertDialogHelper.AlertDialogListener() {
-        @Override
-        public void onPositiveClick(int from) {
+    static boolean isInActionMode = false;
+    public RecyclerContactsAdapter contactsAdapter;
+    public boolean isConfirmSwipe;
+    SwipeToDeleteCallback swipeToDeleteCallback;
+    ArrayList<Contact> selectedList = new ArrayList<>();
+    RecyclerView contactList;
+    AddContactActivity addContactActivity;
+    LinearLayout constraintLayout;
+    TextView counterTextView;
+    Toolbar toolbar;
+    int counter = 0;
+    ArrayList<Contact> contacts = new ArrayList<>(0);
 
-            if (from == 1) {
-                if (multiselectList.size() > 0) {
-                    for (int i = 0; i < multiselectList.size(); i++) {
-                        contacts.remove(multiselectList.get(i));
-                        deleteFromFile(multiselectList.get(i));
-                        contactsAdapter.notifyDataSetChanged();
-                    }
-
-                    if (mActionMode != null) {
-                        mActionMode.finish();
-                    }
-                    Toast.makeText(getApplicationContext(), "Delete Click", Toast.LENGTH_SHORT).show();
-                }
-            } else if (from == 2) {
-                if (mActionMode != null) {
-                    mActionMode.finish();
-                }
-
-
-            }
-
-
-        }
-
-        @Override
-        public void onNegativeClick(int from) {
-
-        }
-
-        @Override
-        public void onNeutralClick(int from) {
-
-        }
-    };
-    private RecyclerView contactList;
-    private AddContactActivity addContactActivity;
-    private ConstraintLayout constraintLayout;
-    private boolean isUndo;
-    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
-
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            // Inflate a menu resource providing context menu items
-            MenuInflater inflater = mode.getMenuInflater();
-            inflater.inflate(R.menu.menu_multi_select, menu);
-            context_menu = menu;
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.action_delete:
-                    alertDialogHelper.showAlertDialog("",
-                            "Delete Contact", "DELETE",
-                            "CANCEL", 1, false);
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-//
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            mActionMode = null;
-            isMultiSelect = false;
-            multiselectList = new ArrayList<Contact>();
-            refreshAdapter();
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,20 +48,31 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
         contactList = findViewById(R.id.listContacts);
         addContactActivity = new AddContactActivity();
         constraintLayout = findViewById(R.id.coordinator_layout);
+        toolbar = findViewById(R.id.app_toolbar);
 
-        alertDialogHelper = new AlertDialogHelper(MainActivity.this);
 
+        setSupportActionBar(toolbar);
+
+
+        counter = 0;
+        contacts = Utilities.getAllSavedContacts(this);
+
+        counterTextView = findViewById(R.id.counter_tetx_view);
+        counterTextView.setVisibility(View.GONE);
 
         addContact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 goToAddContactActivity();
+                clearActionMode();
+
             }
         });
 
         enableSwipeToDeleteAndUndo();
 
     }
+
 
     void goToAddContactActivity() {
         Intent intent = new Intent(MainActivity.this, AddContactActivity.class);
@@ -156,8 +92,7 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
             Toast.makeText(this, " No saved Contact", Toast.LENGTH_SHORT).show();
             return;
         } else {
-            contactsAdapter = new RecyclerContactsAdapter(contacts, this, R.layout.item_contact
-                    , multiselectList);
+            contactsAdapter = new RecyclerContactsAdapter(contacts, this, R.layout.item_contact);
             contactList.setHasFixedSize(true);
             contactList.setLayoutManager(new LinearLayoutManager(this));
             contactList.setAdapter(contactsAdapter);
@@ -165,33 +100,50 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
 
         }
 
+    }
 
-        contactList.addOnItemTouchListener(new RecyclerItemClickListener(this,
-                contactList, new RecyclerItemClickListener.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, int position) {
-                if (isMultiSelect)
-                    multiSelect(position);
-                else
-                    Toast.makeText(getApplicationContext(), "Details Page", Toast.LENGTH_SHORT).show();
-            }
+    @Override
+    public boolean onLongClick(View v) {
+        toolbar.getMenu().clear();
+        toolbar.inflateMenu(R.menu.menu_multi_select);
+        counterTextView.setVisibility(View.VISIBLE);
+        isInActionMode = true;
+        contactsAdapter.notifyDataSetChanged();
+        setToolbarVisible();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-            @Override
-            public void onItemLongClick(View view, int position) {
-                if (!isMultiSelect) {
-                    multiselectList = new ArrayList<Contact>();
-                    isMultiSelect = true;
+        return true;
+    }
 
-                    if (mActionMode == null) {
-                        mActionMode = startActionMode(mActionModeCallback);
-                    }
-                }
+    public void prepareSelection(View view, int position) {
+        setToolbarVisible();
+        if (((CheckBox) view).isChecked()) {
+            selectedList.add(contacts.get(position));
+            counter = counter + 1;
+            updateCounter(counter);
+        } else {
+            selectedList.remove(contacts.get(position));
+            counter = counter - 1;
+            updateCounter(counter);
+        }
+    }
 
-                multiSelect(position);
+    public void setToolbarVisible() {
+        toolbar.setVisibility(View.VISIBLE);
+    }
 
-            }
-        }));
+    public void setToolbarInvisible() {
+        toolbar.setVisibility(View.GONE);
+    }
 
+    public void updateCounter(int counter) {
+        if (counter == 0) {
+
+            counterTextView.setText("0 item Selected");
+
+        } else {
+            counterTextView.setText(counter + " items selected");
+        }
     }
 
     @Override
@@ -201,43 +153,61 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_delete) {
+            isInActionMode = false;
+            RecyclerContactsAdapter recyclerContactsAdapter = (RecyclerContactsAdapter) contactsAdapter;
+            recyclerContactsAdapter.updateAdapter(selectedList);
+            clearActionMode();
+            setToolbarInvisible();
+
+        }
+        if (item.getItemId() == R.id.menu_clear) {
+            onBackPressed();
+
+        }
         return super.onOptionsItemSelected(item);
     }
 
-    public void multiSelect(int position) {
-        if (mActionMode != null) {
-            if (multiselectList.contains(contacts.get(position)))
-                multiselectList.remove(contacts.get(position));
-            else
-                multiselectList.add(contacts.get(position));
+    public void clearActionMode() {
+        isInActionMode = false;
+        toolbar.getMenu().clear();
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        counterTextView.setVisibility(View.GONE);
+        isConfirmSwipe = true;
+        counterTextView.setText("0 item Selected");
+        counter = 0;
+        selectedList.clear();
+        setToolbarInvisible();
+    }
 
-            if (multiselectList.size() > 0)
-                mActionMode.setTitle("" + multiselectList.size());
-            else
-                mActionMode.setTitle("");
+    @Override
+    public void onBackPressed() {
+        enableSwipeToDeleteAndUndo();
+        if (isInActionMode) {
 
-            refreshAdapter();
-
+            clearActionMode();
+            contactsAdapter.notifyDataSetChanged();
+        } else {
+            super.onBackPressed();
         }
+
     }
 
-    public void refreshAdapter() {
-        contactsAdapter.selected_usersList = multiselectList;
-        contactsAdapter.contacts = contacts;
-        contactsAdapter.notifyDataSetChanged();
-    }
 
     private void enableSwipeToDeleteAndUndo() {
-        SwipeToDeleteCallback swipeToDeleteCallback = new SwipeToDeleteCallback(this) {
+
+
+        swipeToDeleteCallback = new SwipeToDeleteCallback(this) {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int i) {
 
-
+                clearActionMode();
                 final int position = viewHolder.getAdapterPosition();
                 final Contact item = contactsAdapter.getData().get(position);
+                deleteDialog(item, position);
 
                 contactsAdapter.removeItem(position);
-                deleteDialog(item, position);
+
 
                 Snackbar snackbar = Snackbar
                         .make(constraintLayout, "Item was removed from the list.", Snackbar.LENGTH_LONG);
@@ -248,7 +218,15 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
 
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(contactList);
+        swipeToDeleteCallback.enableMovement();
+
     }
+
+    public void disableSwipeToDelete() {
+
+        swipeToDeleteCallback.disableMovement();
+    }
+
 
     public void deleteFromFile(final Contact contact) {
         Utilities.deleteContact(getApplicationContext(),
@@ -264,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
                 .setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+
                         deleteFromFile(item);
 
                     }
@@ -273,8 +252,6 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
                     public void onClick(DialogInterface dialog, int which) {
                         contactsAdapter.restoreItem(item, position);
                         contactList.scrollToPosition(position);
-
-
                     }
                 })
                 .setCancelable(false);
@@ -282,20 +259,9 @@ public class MainActivity extends AppCompatActivity implements AlertDialogHelper
         alert.show();
     }
 
-    @Override
-    public void onPositiveClick(int from) {
 
-    }
 
-    @Override
-    public void onNegativeClick(int from) {
 
-    }
-
-    @Override
-    public void onNeutralClick(int from) {
-
-    }
 }
 
 
