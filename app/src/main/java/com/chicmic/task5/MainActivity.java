@@ -23,7 +23,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnLongClickListener {
+public class MainActivity extends AppCompatActivity {
     private FloatingActionButton addContact;
     static boolean isInActionMode = false;
     public RecyclerContactsAdapter contactsAdapter;
@@ -37,40 +37,17 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
     Toolbar toolbar;
     int counter = 0;
     ArrayList<Contact> contacts = new ArrayList<>(0);
+    public boolean isConfirmDelete = false;
+    AlertDialog.Builder alert;
+    AlertDialog alertDialog;
+    RecyclerContactsAdapter recyclerContactsAdapter;
 
+    public boolean isConfirmDelete() {
+        return isConfirmDelete;
+    }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        addContact = findViewById(R.id.add_contact);
-        contactList = findViewById(R.id.listContacts);
-        addContactActivity = new AddContactActivity();
-        constraintLayout = findViewById(R.id.coordinator_layout);
-        toolbar = findViewById(R.id.app_toolbar);
-
-
-        setSupportActionBar(toolbar);
-
-
-        counter = 0;
-        contacts = Utilities.getAllSavedContacts(this);
-
-        counterTextView = findViewById(R.id.counter_tetx_view);
-        counterTextView.setVisibility(View.GONE);
-
-        addContact.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                goToAddContactActivity();
-                clearActionMode();
-
-            }
-        });
-
-        enableSwipeToDeleteAndUndo();
-
+    public void setConfirmDelete(boolean confirmDelete) {
+        isConfirmDelete = confirmDelete;
     }
 
 
@@ -103,29 +80,39 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
     }
 
     @Override
-    public boolean onLongClick(View v) {
-        toolbar.getMenu().clear();
-        toolbar.inflateMenu(R.menu.menu_multi_select);
-        counterTextView.setVisibility(View.VISIBLE);
-        isInActionMode = true;
-        contactsAdapter.notifyDataSetChanged();
-        setToolbarVisible();
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        return true;
-    }
+        addContact = findViewById(R.id.add_contact);
+        contactList = findViewById(R.id.listContacts);
+        addContactActivity = new AddContactActivity();
+        constraintLayout = findViewById(R.id.coordinator_layout);
+        toolbar = findViewById(R.id.app_toolbar);
 
-    public void prepareSelection(View view, int position) {
-        setToolbarVisible();
-        if (((CheckBox) view).isChecked()) {
-            selectedList.add(contacts.get(position));
-            counter = counter + 1;
-            updateCounter(counter);
-        } else {
-            selectedList.remove(contacts.get(position));
-            counter = counter - 1;
-            updateCounter(counter);
-        }
+
+        setSupportActionBar(toolbar);
+
+
+        counter = 0;
+        contacts = Utilities.getAllSavedContacts(this);
+
+        counterTextView = findViewById(R.id.counter_tetx_view);
+        counterTextView.setVisibility(View.GONE);
+
+        addContact.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goToAddContactActivity();
+                clearActionMode();
+
+            }
+        });
+
+
+        enableSwipeToDeleteAndUndo();
+
+
     }
 
     public void setToolbarVisible() {
@@ -151,14 +138,36 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
         return super.onCreateOptionsMenu(menu);
     }
 
+    public void prepareSelection(View view, int position) {
+        setToolbarVisible();
+
+
+        if (((CheckBox) view).isChecked()) {
+            selectedList.add(contacts.get(position));
+            counter = counter + 1;
+            updateCounter(counter);
+        } else {
+            selectedList.remove(contacts.get(position));
+            counter = counter - 1;
+
+
+            updateCounter(counter);
+        }
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_delete) {
+            recyclerContactsAdapter = (RecyclerContactsAdapter) contactsAdapter;
+            if (selectedList.isEmpty()) {
+                Toast.makeText(this, " Do Select some items to delete", Toast.LENGTH_SHORT).show();
+                return super.onOptionsItemSelected(item);
+            }
             isInActionMode = false;
-            RecyclerContactsAdapter recyclerContactsAdapter = (RecyclerContactsAdapter) contactsAdapter;
+
+            //deleteDialogMultiple(selectedList);
             recyclerContactsAdapter.updateAdapter(selectedList);
             clearActionMode();
-            setToolbarInvisible();
 
         }
         if (item.getItemId() == R.id.menu_clear) {
@@ -173,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
         toolbar.getMenu().clear();
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         counterTextView.setVisibility(View.GONE);
-        isConfirmSwipe = true;
+
         counterTextView.setText("0 item Selected");
         counter = 0;
         selectedList.clear();
@@ -207,24 +216,23 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
                 deleteDialog(item, position);
 
                 contactsAdapter.removeItem(position);
-
-
                 Snackbar snackbar = Snackbar
                         .make(constraintLayout, "Item was removed from the list.", Snackbar.LENGTH_LONG);
 
 
             }
+
+            @Override
+            public boolean isItemViewSwipeEnabled() {
+                if (counterTextView.getVisibility() == View.GONE) {
+                    return true;
+                }
+                return false;
+            }
         };
 
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(contactList);
-        swipeToDeleteCallback.enableMovement();
-
-    }
-
-    public void disableSwipeToDelete() {
-
-        swipeToDeleteCallback.disableMovement();
     }
 
 
@@ -243,6 +251,7 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
 
+
                         deleteFromFile(item);
 
                     }
@@ -258,6 +267,46 @@ public class MainActivity extends AppCompatActivity implements View.OnLongClickL
 
         alert.show();
     }
+
+    public void deleteDialogMultiple(final Contact item, final int position) {
+
+        if (alertDialog != null && alertDialog.isShowing()) {
+            return;
+        }
+
+        alert = new AlertDialog.Builder(this);
+        alertDialog = alert.create();
+
+
+        alert.setTitle("Delete Note")
+                .setMessage("Are you sure you want to delete")
+                .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+//                            setConfirmDelete(true);
+//                            recyclerContactsAdapter.updateAdapter();
+                        deleteFromFile(item);
+
+
+                    }
+                })
+                .setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        contactsAdapter.restoreItem(item, position);
+                        contactList.scrollToPosition(position);
+                        clearActionMode();
+                    }
+                })
+                .setCancelable(false);
+
+        alert.show();
+    }
+
+
+
+
 
 
 

@@ -40,7 +40,7 @@ public class Utilities {
     }
 
     public static ArrayList<Contact> getAllSavedContacts(Context context) {
-        ArrayList<Contact> notes = new ArrayList<>();
+        ArrayList<Contact> contacts = new ArrayList<>();
 
         File filesDir = context.getFilesDir();
         ArrayList<String> noteFiles = new ArrayList<>();
@@ -61,7 +61,7 @@ public class Utilities {
                 fis = context.openFileInput(noteFiles.get(i));
                 ois = new ObjectInputStream(fis);
 
-                notes.add((Contact) ois.readObject());
+                contacts.add((Contact) ois.readObject());
                 fis.close();
                 ois.close();
 
@@ -70,7 +70,7 @@ public class Utilities {
                 return null;
             }
         }
-        return notes;
+        return contacts;
     }
 
     public static Contact getContactByFileName(Context context, String fileName) {

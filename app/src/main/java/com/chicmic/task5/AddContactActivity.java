@@ -57,12 +57,10 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
 
-//
-
-
             imageUserProfile.setImageBitmap(bitmap);
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             bitmap.compress(Bitmap.CompressFormat.JPEG, 70, byteArrayOutputStream);
+
 
             byte[] imageAsByte = byteArrayOutputStream.toByteArray();
             String rawString = Base64.encodeToString(imageAsByte, Base64.DEFAULT);

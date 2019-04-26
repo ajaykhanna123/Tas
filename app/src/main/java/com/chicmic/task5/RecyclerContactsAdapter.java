@@ -22,10 +22,12 @@ public class RecyclerContactsAdapter extends RecyclerView.Adapter<RecyclerContac
     Context context;
     int resource;
 
+
     public RecyclerContactsAdapter(ArrayList<Contact> contacts, Context context, int resource) {
         this.contacts = contacts;
         this.context = context;
         this.resource = resource;
+
 
     }
 
@@ -100,8 +102,9 @@ public class RecyclerContactsAdapter extends RecyclerView.Adapter<RecyclerContac
                 mainActivity.isInActionMode = true;
                 mainActivity.contactsAdapter.notifyDataSetChanged();
                 mainActivity.setToolbarVisible();
-                mainActivity.disableSwipeToDelete();
+
                 viewHolder.checkItemSelected.setChecked(true);
+
 
                 return true;
             }
@@ -116,13 +119,47 @@ public class RecyclerContactsAdapter extends RecyclerView.Adapter<RecyclerContac
 
     }
 
+
+    public void updateAdapter() {
+        MainActivity mainActivity = (MainActivity) context;
+
+
+        for (Contact contact : contacts) {
+
+            mainActivity.deleteDialogMultiple(contact, contacts.indexOf(contact));
+        }
+
+        if (mainActivity.isConfirmDelete()) {
+            for (Contact contact : contacts) {
+
+                contacts.remove(contact);
+                notifyDataSetChanged();
+            }
+
+
+        }
+
+    }
     public void updateAdapter(ArrayList<Contact> list) {
+        MainActivity mainActivity = (MainActivity) context;
+
+
         for (Contact contact : list) {
             contacts.remove(contact);
-            MainActivity mainActivity = (MainActivity) context;
-            mainActivity.deleteDialog(contact, list.indexOf(contact));
+            notifyDataSetChanged();
+            mainActivity.deleteDialogMultiple(contact, list.indexOf(contact));
         }
-        notifyDataSetChanged();
+
+//        if(mainActivity.isConfirmDelete())
+//        {
+//            for (Contact contact : list) {
+//
+//
+//            }
+//
+//
+//        }
+
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -144,16 +181,16 @@ public class RecyclerContactsAdapter extends RecyclerView.Adapter<RecyclerContac
             checkItemSelected = convertView.findViewById(R.id.checkItemSelected);
             checkItemSelected.setVisibility(View.GONE);
 
-            constraintLayout.setOnLongClickListener((View.OnLongClickListener) mainActivity);
+            //constraintLayout.setOnLongClickListener((View.OnLongClickListener) mainActivity);
             this.mainActivity = (MainActivity) mainActivity;
             checkItemSelected.setOnClickListener(this);
 
 
         }
 
+
         @Override
         public void onClick(View v) {
-
             mainActivity.prepareSelection(v, getAdapterPosition());
 
         }

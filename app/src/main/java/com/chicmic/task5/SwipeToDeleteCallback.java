@@ -40,17 +40,7 @@ abstract public class SwipeToDeleteCallback extends ItemTouchHelper.Callback {
 
     }
 
-    public boolean isShouldMove() {
-        return shouldMove;
-    }
 
-    public void enableMovement() {
-        shouldMove = false;
-    }
-
-    public void disableMovement() {
-        shouldMove = true;
-    }
 
 
     @Override
