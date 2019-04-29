@@ -11,10 +11,12 @@ public class Contact implements Serializable {
     private String faxNo;
     private long time;
     private String imageId;
+    private boolean isSelected;
+
 
 
     public Contact(long time, String name, String phnNo, String address, String gender, String email,
-                   String faxNo, String imageId) {
+                   String faxNo, String imageId, boolean isSelected) {
         this.name = name;
         this.phnNo = phnNo;
         this.address = address;
@@ -23,6 +25,8 @@ public class Contact implements Serializable {
         this.faxNo = faxNo;
         this.time = time;
         this.imageId = imageId;
+        this.isSelected=isSelected;
+
     }
 
     public String getName() {
@@ -87,5 +91,12 @@ public class Contact implements Serializable {
 
     public void setImageId(String imageId) {
         this.imageId = imageId;
+    }
+    public boolean isSelected() {
+        return isSelected;
+    }
+
+    public void setSelected(boolean selected) {
+        isSelected = selected;
     }
 }

@@ -159,6 +159,9 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
                     Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
             startActivityForResult(i, RESULT_LOAD_IMAGE);
+
+//            Intent takePicture = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//            startActivityForResult(takePicture, 0);
         }
     }
 
@@ -175,15 +178,10 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 //        String userImageId=PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
 //                .getString("image", "");
 
-
         if (imageUserProfile.getDrawable() != null) {
             Bitmap bitmap = ((BitmapDrawable) imageUserProfile.getDrawable()).getBitmap();
             userImageId = StringToBitmap.convertStringToBitmap(bitmap, imageUserProfile);
         }
-
-
-
-
 
         if(isRadioGroupChecked())
         {
@@ -214,13 +212,13 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
         if (mLoadedNote == null){
             contact = new Contact(System.currentTimeMillis(), userName, userPhnNo,
-                    userAddress, userGender, userEmailAddress, userfax, userImageId);
+                    userAddress, userGender, userEmailAddress, userfax, userImageId,false);
 
         }
         else
         {
             contact = new Contact(mLoadedNote.getTime(), userName, userPhnNo,
-                    userAddress, userGender, userEmailAddress, userfax, userImageId);
+                    userAddress, userGender, userEmailAddress, userfax, userImageId,false);
             //Toast.makeText(this, System.currentTimeMillis()+"", Toast.LENGTH_SHORT).show();
         }
 
@@ -238,32 +236,7 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
         finish();
     }
 
-    public void deleteNote() {
 
-        if (mLoadedNote == null) {
-            finish();
-        } else {
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
-            alert.setTitle("Delete Note")
-                    .setMessage("Are you sure you want to delete ")
-                    .setPositiveButton("YES", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            Utilities.deleteContact(getApplicationContext(),
-                                    mLoadedNote.getTime() + Utilities.FILE_EXTENSION);
-                            Toast.makeText(getApplicationContext(),
-                                    " contact has been deleted", Toast.LENGTH_SHORT).show();
-                            finish();
-                        }
-                    })
-                    .setNegativeButton("NO", null)
-                    .setCancelable(false);
-
-            alert.show();
-
-
-        }
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -284,7 +257,8 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
             cursor.close();
             Picasso.get().setLoggingEnabled(true);
-            Picasso.get().load(data.getData()).placeholder(R.drawable.placeholder_image).resize(imageUserProfile.getWidth()
+            Picasso.get().load(data.getData()).placeholder(R.drawable.placeholder_image)
+                    .resize(imageUserProfile.getWidth()
                     ,imageUserProfile.getHeight()).centerCrop().into(imgTarget);
 
             lastImgAccessed = data.getData().toString();
@@ -296,6 +270,29 @@ public class AddContactActivity extends AppCompatActivity implements View.OnClic
 
             // String picturePath contains the path of selected Image
         }
+//        if(requestCode == 0 && resultCode == RESULT_OK && null != data){
+//            Uri selectedImage = data.getData();
+//            String[] filePathColumn = {MediaStore.Images.Media.DATA};
+//
+//            Cursor cursor = getContentResolver().query(selectedImage,
+//                    filePathColumn, null, null, null);
+//            cursor.moveToFirst();
+//
+//            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+//            String picturePath = cursor.getString(columnIndex);
+//
+//            cursor.close();
+//            Picasso.get().setLoggingEnabled(true);
+//            Picasso.get().load(data.getData()).placeholder(R.drawable.placeholder_image)
+//                    .resize(imageUserProfile.getWidth()
+//                            ,imageUserProfile.getHeight()).centerCrop().into(imgTarget);
+//
+//            lastImgAccessed = data.getData().toString();
+//
+//
+//            Toast.makeText(this,picturePath,Toast.LENGTH_SHORT).show();
+//
+//        }
 
     }
 

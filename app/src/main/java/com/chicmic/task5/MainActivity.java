@@ -2,8 +2,10 @@ package com.chicmic.task5;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -41,6 +43,15 @@ public class MainActivity extends AppCompatActivity {
     AlertDialog.Builder alert;
     AlertDialog alertDialog;
     RecyclerContactsAdapter recyclerContactsAdapter;
+    public boolean isUndo=false;
+
+    public boolean isUndo() {
+        return isUndo;
+    }
+
+    public void setUndo(boolean undo) {
+        isUndo = undo;
+    }
 
     public boolean isConfirmDelete() {
         return isConfirmDelete;
@@ -165,13 +176,18 @@ public class MainActivity extends AppCompatActivity {
             }
             isInActionMode = false;
 
-            //deleteDialogMultiple(selectedList);
-            recyclerContactsAdapter.updateAdapter(selectedList);
-            clearActionMode();
+            deleteDialogMultiple(selectedList);
+           // recyclerContactsAdapter.updateAdapter(selectedList);
+
+
 
         }
         if (item.getItemId() == R.id.menu_clear) {
+
             onBackPressed();
+            clearActionMode();
+            selectedList.clear();
+
 
         }
         return super.onOptionsItemSelected(item);
@@ -187,6 +203,7 @@ public class MainActivity extends AppCompatActivity {
         counter = 0;
         selectedList.clear();
         setToolbarInvisible();
+
     }
 
     @Override
@@ -196,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
 
             clearActionMode();
             contactsAdapter.notifyDataSetChanged();
+            selectedList.clear();
         } else {
             super.onBackPressed();
         }
@@ -213,11 +231,39 @@ public class MainActivity extends AppCompatActivity {
                 clearActionMode();
                 final int position = viewHolder.getAdapterPosition();
                 final Contact item = contactsAdapter.getData().get(position);
-                deleteDialog(item, position);
+                //deleteDialog(item, position);
+
 
                 contactsAdapter.removeItem(position);
+
                 Snackbar snackbar = Snackbar
-                        .make(constraintLayout, "Item was removed from the list.", Snackbar.LENGTH_LONG);
+                        .make(constraintLayout, "Item was removed from the list", Snackbar.LENGTH_LONG);
+
+                snackbar.setAction("Undo", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        contactsAdapter.restoreItem(item, position);
+                        contactList.scrollToPosition(position);
+                        setUndo(true);
+                    }
+                });
+
+                snackbar.setActionTextColor(Color.YELLOW);
+                snackbar.show();
+
+                snackbar.addCallback(new BaseTransientBottomBar.BaseCallback<Snackbar>() {
+                    @Override
+                    public void onDismissed(Snackbar transientBottomBar, int event) {
+                        if(!isUndo())
+                        {
+                            deleteFromFile(item);
+                        }
+                        super.onDismissed(transientBottomBar, event);
+                    }
+
+                });
+
+
 
 
             }
@@ -229,7 +275,12 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return false;
             }
-        };
+
+
+
+
+
+    };
 
         ItemTouchHelper itemTouchhelper = new ItemTouchHelper(swipeToDeleteCallback);
         itemTouchhelper.attachToRecyclerView(contactList);
@@ -242,10 +293,20 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(getApplicationContext(),
                 " contact has been deleted", Toast.LENGTH_SHORT).show();
     }
+    public void deleteMultipleFromFile(ArrayList<Contact> arrayListContacts)
+    {
+
+            Utilities.deleteContactMultiple(getApplicationContext(),
+                    arrayListContacts);
+
+
+        Toast.makeText(getApplicationContext(),
+                "Selected contacts have been deleted", Toast.LENGTH_SHORT).show();
+    }
 
     public void deleteDialog(final Contact item, final int position) {
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
-        alert.setTitle("Delete Note")
+        alert.setTitle("Delete Contact")
                 .setMessage("Are you sure you want to delete ")
                 .setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
@@ -268,7 +329,7 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    public void deleteDialogMultiple(final Contact item, final int position) {
+    public void deleteDialogMultiple(final ArrayList<Contact> arrayListContacts) {
 
         if (alertDialog != null && alertDialog.isShowing()) {
             return;
@@ -278,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
         alertDialog = alert.create();
 
 
-        alert.setTitle("Delete Note")
+        alert.setTitle("Delete Contact")
                 .setMessage("Are you sure you want to delete")
                 .setPositiveButton("YES", new DialogInterface.OnClickListener() {
                     @Override
@@ -286,7 +347,19 @@ public class MainActivity extends AppCompatActivity {
 
 //                            setConfirmDelete(true);
 //                            recyclerContactsAdapter.updateAdapter();
-                        deleteFromFile(item);
+                        for (Contact contact:selectedList )
+                        {
+                            contacts.remove(contact);
+                            deleteFromFile(contact);
+
+                        }
+                        recyclerContactsAdapter.notifyDataSetChanged();
+
+                       // deleteMultipleFromFile(arrayListContacts);
+                        setConfirmDelete(true);
+
+                        clearActionMode();
+
 
 
                     }
@@ -294,9 +367,11 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("NO", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        contactsAdapter.restoreItem(item, position);
-                        contactList.scrollToPosition(position);
+                       // contactsAdapter.restoreItem(item, position);
+                        //contactList.scrollToPosition(position);
                         clearActionMode();
+                        selectedList.clear();
+                        recyclerContactsAdapter.notifyDataSetChanged();
                     }
                 })
                 .setCancelable(false);

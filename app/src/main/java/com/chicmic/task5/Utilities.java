@@ -103,7 +103,8 @@ public class Utilities {
 
     }
 
-    public static void deleteContact(Context context, String filename) {
+    public static void deleteContact(Context context, String filename)
+    {
         File dir = context.getFilesDir();
         File f = new File(dir, filename);
 
@@ -111,6 +112,21 @@ public class Utilities {
         {
             f.delete();
         }
+
+    }
+    public static void deleteContactMultiple(Context context,ArrayList<Contact> filenames)
+    {
+        File dir = context.getFilesDir();
+        for (Contact contact:filenames)
+        {
+            File f = new File(dir, contact.getTime()+Utilities.FILE_EXTENSION);
+
+            if(f.exists())
+            {
+                f.delete();
+            }
+        }
+
 
     }
 }
